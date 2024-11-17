@@ -1,22 +1,17 @@
 with project_segments as (
   select distinct
-    id,
-    name,
-    slug
+    id
   from
     fivetran_ingest.crowd_prod_public.segments
   where
     tenantid = '875c38bd-2b1b-4e91-ad07-0cfbabb4c49f'
-    and parentslug = 'anuket'
-    -- This has jira
-    -- and id in ('2b6467a6-6d8b-4a6d-9501-cb89a5379497', '714a7151-8257-4fd1-8622-2bb5a05b67f1')
+    and parentslug = 'onap'
 ),
 
 acts as (
   select
     a.id as activity_id,
-    s.slug as project_slug,
-    s.name as project_name,
+    a.platform || ':' || regexp_replace(a.channel, '^(\s*http?s:\/\/)?(gerrit\.)?(.*\/)?(.*\/.*)\s*$', '\\4', 1, 1, 'i') as repo,
     a.memberid as member_id,
     a.type as activity_type,
     a.platform,
@@ -73,6 +68,7 @@ acts as (
     a.organizationid = o.id
   where
     not iff(m.attributes:"isBot":"default" = 'true', true, false)
+    and a.timestamp >= '{{since}}'
 ),
 
 aggs as (
@@ -118,8 +114,7 @@ aggs as (
     count(distinct case when a.activity_type = 'message' and platform = 'groupsio' then a.activity_id end) as groupsio_message_activity,
     count(distinct case when a.activity_type = 'message' and platform = 'slack' then a.activity_id end) as slack_message_activity,
     count(distinct a.activity_id) as activities,
-    listagg(distinct a.project_slug, ',') within group (order by a.project_slug) as project_slugs,
-    listagg(distinct a.project_name, ',') within group (order by a.project_name) as project_names,
+    listagg(distinct a.repo, ',') within group (order by a.repo asc) as repos
   from
     acts a
   group by
@@ -174,8 +169,7 @@ rep as (
     d.groupsio_message_activity as "Groups.io: Messages",
     d.slack_message_activity as "Slack: Messages",
     d.activities as "All Activities",
-    d.project_slugs,
-    d.project_names,
+    d.repos
   from
     aggs d
   left join
@@ -207,8 +201,7 @@ select
   r."Emails",
   r."Organization",
   listagg(distinct mip.platform, ',') within group (order by mip.platform) as "Platforms",
-  r.project_slugs as "Project slugs",
-  r.project_names as "Project names",
+  r.repos as "Repositories",
   r."Code: commits",
   r."Code: LOC Added",
   r."Code: LOC Modified",

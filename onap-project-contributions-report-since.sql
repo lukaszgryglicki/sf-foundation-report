@@ -7,9 +7,7 @@ with project_segments as (
     fivetran_ingest.crowd_prod_public.segments
   where
     tenantid = '875c38bd-2b1b-4e91-ad07-0cfbabb4c49f'
-    and parentslug = 'anuket'
-    -- This has jira
-    -- and id in ('2b6467a6-6d8b-4a6d-9501-cb89a5379497', '714a7151-8257-4fd1-8622-2bb5a05b67f1')
+    and parentslug = 'onap'
 ),
 
 acts as (
@@ -73,6 +71,7 @@ acts as (
     a.organizationid = o.id
   where
     not iff(m.attributes:"isBot":"default" = 'true', true, false)
+    and a.timestamp >= '{{since}}'
 ),
 
 aggs as (
