@@ -70,6 +70,7 @@ contributions as (
   where
     a.channel ilike any ('%gerrit.onap.org%', '%gerrit.opnfv.org%', '%gerrit.o-ran-sc.org%')
     and not a._fivetran_deleted
+    and a.timestamp >= '{{from}}'
   group by
     all
 ),

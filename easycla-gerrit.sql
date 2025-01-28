@@ -63,6 +63,7 @@ contributions as (
     a.memberid = u.member_id
   where
     a.channel ilike any ('%gerrit.onap.org%', '%gerrit.opnfv.org%', '%gerrit.o-ran-sc.org%')
+    and a.timestamp >= '{{from}}'
   group by
     all
 ),
